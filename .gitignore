@@ -1,0 +1,15 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# EdgeTX system files (should not be in repo)
+RADIO/
+EEPROM.BIN
+FIRMWARE.BIN
+
+# Logs
+*.log
+*.csv
+
+# Compiled Lua
+*.luac
