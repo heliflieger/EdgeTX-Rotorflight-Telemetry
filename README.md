@@ -96,6 +96,7 @@ The provided model template uses the following channel order. Ensure these match
 | **CH6** | Motor | Throttle Signal |
 | **CH7** | Bank | Bank Selection |
 | **CH8** | Rescue | Rescue Activation |
+| **CH9** | Buffer | Backup / Buffer (Logic controlled) |
 
 ### Throttle Channel Logic (Special Feature)
 The Throttle channel (CH6) features a special configuration on the **Input** side (Offset -90%) combined with the **Mixer** (Weight 200%, Offset 100%). This logic maps the 3-position switch **SB** to three distinct motor states:
@@ -131,6 +132,38 @@ If you want to change the switch assignment (e.g. swap switches or reverse direc
 
 * **To change a switch:** Edit the input line and change the **Source**.
 * **To reverse a switch:** Invert the signal in the input settings.
+
+### Buffer Logic (Channel 9)
+Channel 9 is configured to control a backup buffer (e.g. R2 Prototyping) with an automatic shutdown feature.
+
+1.  **Normal Operation:** The channel outputs **+100%**. The buffer is active and charging.
+2.  **Shutdown:** The channel outputs **-100%**. The buffer turns off.
+
+**Logic:**
+The radio monitors the Voltage (`VBat`) via telemetry.
+*   If **VBat < 13.0V** (Main battery disconnected)
+*   **AND** the model is **Disarmed**
+*   -> The system overrides Channel 9 to **-100%** to shut down the buffer.
+
+*Note:* This ensures the buffer remains active in flight (Armed) even if the BEC fails, but turns off automatically when you unplug the battery on the ground.
+
+```mermaid
+graph TD
+    subgraph Logic_Check
+        C1[VBat < 13.0V]
+        C2[Disarmed]
+    end
+
+    subgraph Result
+        ON["+100% (Active)"]
+        OFF["-100% (Shutdown)"]
+    end
+
+    C1 --> AND{AND}
+    C2 --> AND
+    AND -- True --> OFF
+    AND -- False --> ON
+```
 
 ---
 
@@ -192,7 +225,7 @@ config:
 ---
 xychart-beta
     title "F3C Pitch-Curve"
-    x-axis "Stick Position" ["-100% (Min)", "-50%", "0% (Mitte)", "50%", "100% (Max)"]
+    x-axis "Stick Position" ["-100% (Min)", "-50%", "0% (Middle)", "50%", "100% (Max)"]
     y-axis "Pitch Output" -100 --> 100
     line [-20, 16, 26, 32, 38]
 ```
