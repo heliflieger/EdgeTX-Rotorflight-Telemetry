@@ -1,9 +1,9 @@
 local app_name = "RF2_widget"
 
+local VERSION = "1.0.0"
+
 local baseDir = "/SCRIPTS/RF2_widget"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
-
-loadScript(baseDir.."/widgets/rf2_service.lua")()
 
 local timerNumber = 1
 
@@ -13,8 +13,11 @@ local dashboard_styles = {
     [3] = "rf2_dashboard_capa.lua",
 }
 
+local lastTime = 0
+
 
 local wgt = {
+    app_ver = VERSION,
     is_connected = false,
     isInitialized = false,
     task_capa_audio = nil,
@@ -52,6 +55,10 @@ local wgt = {
         -- governor_str = "-------",
         bb_enabled = true,
         bb_percent = 0,
+        rate_profile = -1,
+        rate_profile_pending = -1,
+        rate_profile_announced = -1,
+        rate_profile_switch_time = 0,
         bb_size = 0,
         bb_txt = "Blackbox: --% 0MB",
         rescue_on = false,
@@ -103,6 +110,10 @@ local percent_list_lipo = {
 local function log(fmt, ...)
     print(string.format("[%s] "..fmt, app_name, ...))
     return
+end
+
+local function clock()
+    return getTime() / 100
 end
 --------------------------------------------------------------
 
@@ -376,6 +387,8 @@ local function updateARMD(wgt)
     end
 end
 
+
+
 local function updateThr(wgt)
     local val     = getValue("Thr")
     local val_max = getValue("Thr+")
@@ -414,22 +427,67 @@ local function updateELRS(wgt)
     wgt.values.rqly_min_str = string.format("%d%%", wgt.values.rqly_min)
 end
 
-local function playCraftName(wgt)
+local function playSoundFile(soundFile)
     if (wgt.is_connected == false or wgt.options.enableAudio == 0) then
         return
     end
+    playFile(soundFile)
+end
 
+local function updateRateProfile(wgt)
+    local val = getValue("RTE#")
+    
+    -- UI Update sofort
+    wgt.values.rate_profile = val
+
+    -- Initialisierung beim ersten Durchlauf (verhindert Sound beim Start)
+    if wgt.values.rate_profile_announced == -1 then
+        wgt.values.rate_profile_announced = val
+        wgt.values.rate_profile_pending = val
+        return
+    end
+
+    if val ~= wgt.values.rate_profile_pending then
+        wgt.values.rate_profile_pending = val
+        wgt.values.rate_profile_switch_time = clock() + 0.5 -- 0.5s Delay
+    end
+
+    if clock() > wgt.values.rate_profile_switch_time and wgt.values.rate_profile_announced ~= wgt.values.rate_profile_pending then
+        wgt.values.rate_profile_announced = wgt.values.rate_profile_pending
+        local soundFile = "fm-"..wgt.values.rate_profile_announced..".wav"
+        if wgt.values.rate_profile_announced == wgt.options.auroprofile then
+            soundFile = "auro.wav"
+        end
+        playSoundFile(soundFile)
+    end
+end
+
+local function updateRescue(wgt)
+    local val = getValue("Resc")
+    local is_rescue = (val > 0)
+
+    if wgt.values.rescue_on ~= is_rescue then
+        wgt.values.rescue_on = is_rescue
+        if is_rescue then
+            playSoundFile("rescue.wav")
+        end
+    end
+end
+
+local function playCraftName(wgt)
     local modelName = wgt.values.craft_name
     if (modelName == wgt.values.sound_file) then
         return
     end
     local soundFile = "/SOUNDS/RF2/"..modelName..".wav"
-    playFile(soundFile)
+    playSoundFile(soundFile)
     if modelName ~= wgt.values.sound_file then
         wgt.values.sound_file = modelName
         -- log("playCraftName - model changed, %s --> %s", wgt.values.sound_file, modelName)
     end
 end
+
+
 
 local function updateImage(wgt)
     local newCraftName = wgt.values.craft_name
@@ -460,8 +518,6 @@ local function updateOnNoConnection(wgt)
     wgt.is_telem = false
     wgt.is_connected = false
     collectgarbage()
-    --wgt.values.sound_file = "-------"
-    --rf2.executeScript("F/pilotConfigReset")()
 end
 
 ---------------------------------------------------------------------------------------
@@ -494,7 +550,6 @@ end
 local function create(zone, options)
     wgt.zone = zone
     wgt.options = options
-    wgt.tools = assert(loadScript("lib_widget_tools.lua"))(nil, app_name)
     return update(wgt, options)
 end
 
@@ -512,6 +567,8 @@ local function background(wgt)
     updateImage(wgt)
     playCraftName(wgt)
     updateELRS(wgt)
+    updateRateProfile(wgt)
+    updateRescue(wgt)
     updateARM(wgt)
     updateARMD(wgt)
     updateFlyStat(wgt)
@@ -524,10 +581,10 @@ local function background(wgt)
     -- not on air, msp allowed
 
     if getRSSI() > 0 then
-        rf2fc.msp.ctl.lastServerTime = rf2fc.clock()
+        lastTime = clock()
         wgt.is_connected = true
     elseif getRSSI() == 0 then
-        if rf2fc.msp.ctl.lastServerTime and rf2fc.clock() - rf2fc.msp.ctl.lastServerTime < 5 then
+        if lastTime and clock() - lastTime < 5 then
             -- Do not re-initialise if the RSSI is 0 for less than 5 seconds.
             -- This is also a work-around for https://github.com/ExpressLRS/ExpressLRS/issues/3207 (AUX channel bug in ELRS TX < 3.5.5)
             return
@@ -538,12 +595,6 @@ local function background(wgt)
             -- return
         end
     end
-
-    --wgt.is_telem = wgt.tools.isTelemetryAvailable()
-    --if wgt.is_telem == false then
-        -- updateOnNoConnection(wgt)
-    --    return
-    --end
 
 end
 

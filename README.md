@@ -202,6 +202,7 @@ You can customize the widget appearance and behavior directly in the EdgeTX widg
 | **Text Color** | Customize the primary text color of the widget. |
 | **Enable Audio Announcements** | **ON:** Plays voice alerts for Arm/Disarm and low battery. |
 | **Enable Haptic Announcements** | **ON:** Vibrates the radio on low battery warnings (even if audio is off). |
+| **Autorotation Profile** | Select the Rate Profile used for Autorotation. When this profile is active, "Autorotation" is announced instead of the profile number. |
 
 ---
 
@@ -227,6 +228,8 @@ xychart-beta
     title "F3C Pitch-Curve"
     x-axis "Stick Position" ["-100% (Min)", "-50%", "0% (Middle)", "50%", "100% (Max)"]
     y-axis "Pitch Output" -100 --> 100
+    x-axis "Stick Input (%)" ["-100", "-50", "0", "50", "100"]
+    y-axis "Pitch Output (%)" -100 --> 100
     line [-20, 16, 26, 32, 38]
 ```
 

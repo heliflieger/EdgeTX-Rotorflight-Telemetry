@@ -127,21 +127,6 @@ M.build_ui = function(wgt)
         end
     })
 
-    -- status bar
-    local bStatusBar = pMain:box({x=0, y=wgt.zone.h-20})
-    local statusBarColor = lcd.RGB(0x0078D4)
-    bStatusBar:rectangle({x=0, y=0,w=wgt.zone.w, h=20, color=statusBarColor, filled=true})
-    bStatusBar:rectangle({x=25, y=0,w=70, h=20, color=RED, filled=true, visible=function() return (wgt.values.rqly_min < 80) end })
-    bStatusBar:label({x=3  , y=2, text=function() return string.format("elrs RQly-: %s%%", wgt.values.rqly_min) end, font=function() return (wgt.values.rqly_min >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
-    bStatusBar:label({x=120, y=2, text=function() return string.format("TPwr+: %smw", getValue("TPWR+")) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=230, y=2, text=function() return string.format("VBec-: %sv", getValue("Vbec-")) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=320, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
-    --bStatusBar:label({x=425, y=2, text="Shmuely", font=FS.FONT_6, color=YELLOW})
-    -- bStatusBar:label({x=390, y=2, text=rf2.LUA_VERSION, font=FS.FONT_6, color=WHITE})
-
-  bStatusBar:circle({x=455, y=10, filled=true, radius=7, color=function() return wgt.is_connected and GREEN or GREY end})
-    bStatusBar:circle({x=470, y=10, filled=true, radius=7, color=function() return wgt.values.is_arm and RED or GREY end })
-
     -- image
     local isizew=150
     local isizeh=100
@@ -190,6 +175,21 @@ M.build_ui = function(wgt)
     bNoConn:rectangle({x=5, y=10, w=isizew-10, h=isizeh-10, rounded=15, filled=true, color=BLACK, opacity=250})
     bNoConn:label({x=10, y=80, text=function() return wgt.not_connected_error end , font=FS.FONT_8, color=WHITE})
     bNoConn:image({x=30, y=0, w=90, h=90, file=baseDir.."widgets/img/no_connection_wr.png"})
+
+        -- status bar
+    local bStatusBar = pMain:box({x=0, y=wgt.zone.h-20})
+    local statusBarColor = lcd.RGB(0x0078D4)
+    bStatusBar:rectangle({x=0, y=0,w=wgt.zone.w, h=20, color=statusBarColor, filled=true})
+    -- bStatusBar:label({x=3  , y=2, text=function() return string.format("RQLY: %s%%   RQLY-: %s", wgt.values.rqly, wgt.values.rqly_min)) end, font=FS.FONT_6, color=WHITE})
+    bStatusBar:rectangle({x=25, y=0,w=70, h=20, color=RED, filled=true, visible=function() return (wgt.values.rqly_min < 80) end })
+    bStatusBar:label({x=3  , y=2, text=function() return string.format("elrs RQly-: %s%%", wgt.values.rqly_min) end, font=function() return (wgt.values.rqly_min >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
+    bStatusBar:label({x=100, y=2, text=function() return string.format("TPwr+: %smw", getValue("TPWR+")) end, font=FS.FONT_6, color=WHITE})
+    bStatusBar:label({x=200, y=2, text=function() return string.format("VBec-: %sv", getValue("Vbec-")) end, font=FS.FONT_6, color=WHITE})
+    bStatusBar:label({x=280, y=0, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
+    bStatusBar:label({ x=LCD_W -90, y=2, text=function() return string.format("V: %s", wgt.app_ver) end, font=FS.FONT_6, color=WHITE})
+
+    bStatusBar:circle({ x=LCD_W -30, y=10, filled=true, radius=7, color=function() return wgt.is_connected and GREEN or GREY end})
+    bStatusBar:circle({ x=LCD_W -12, y=10, filled=true, radius=7, color=function() return wgt.values.is_arm and RED or GREY end })
 
 end
 

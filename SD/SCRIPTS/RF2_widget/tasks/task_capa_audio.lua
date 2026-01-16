@@ -16,7 +16,7 @@ M.init = function(wgt)
 end
 
 local function playCapacityValue_by_percent(wgt)
-    if wgt.options.enableAudio == 0 or getRSSI() == 0 then
+    if wgt.options.enableAudio == 0 or getRSSI() == 0 or wgt.values.is_arm == false then
         return
     end
 
@@ -51,7 +51,7 @@ M.run = function(wgt)
         if m_clock() - last_capa_anounce > 10 then
             log("task_capa_audio: time to play critical capacity")
             playCapacityValue_by_percent(wgt)
-            if wgt.options.enableHaptic == 1 and getRSSI() > 0 then
+            if wgt.options.enableHaptic == 1 and getRSSI() > 0 and wgt.values.is_arm then
                 playHaptic(25, 0, 0)
             end
             last_capa_anounce = m_clock()
@@ -60,7 +60,7 @@ M.run = function(wgt)
         if m_clock() - last_capa_anounce > 20 then
             log("task_capa_audio: time to play low capacity")
             playCapacityValue_by_percent(wgt)
-            if wgt.options.enableHaptic == 1 and getRSSI() > 0 then
+            if wgt.options.enableHaptic == 1 and getRSSI() > 0 and wgt.values.is_arm then
                 playHaptic(15, 0, 0)
             end
             last_capa_anounce = m_clock()
