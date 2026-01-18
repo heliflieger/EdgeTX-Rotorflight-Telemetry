@@ -1,5 +1,9 @@
 # EdgeTX Rotorflight Telemetry Widget
 
+[English](README.md) | [Deutsch](README.de.md)
+
+---
+
 This repository provides a specialized telemetry widget for **Rotorflight 2**, designed for EdgeTX radios. It focuses purely on flight-relevant data and includes a complete setup pack with sound files and a model template.
 
 **Based on:** [RF2-dashboards by Offer Shmuely](https://github.com/offer-shmuely/RF2-dashboards).
