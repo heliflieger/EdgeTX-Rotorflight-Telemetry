@@ -206,6 +206,7 @@ You can customize the widget appearance and behavior directly in the EdgeTX widg
 | **Text Color** | Customize the primary text color of the widget. |
 | **Enable Audio Announcements** | **ON:** Plays voice alerts for Arm/Disarm and low battery. |
 | **Enable Haptic Announcements** | **ON:** Vibrates the radio on low battery warnings (even if audio is off). |
+| **10% Capacity Announce** | **ON:** Plays a battery warning at every 10% step of consumption (e.g., 90%, 80%, 70%...). If disabled, warnings only occur at 50% and 30%. |
 | **Autorotation Profile** | Select the Rate Profile used for Autorotation. When this profile is active, "Autorotation" is announced instead of the profile number. |
 
 ---

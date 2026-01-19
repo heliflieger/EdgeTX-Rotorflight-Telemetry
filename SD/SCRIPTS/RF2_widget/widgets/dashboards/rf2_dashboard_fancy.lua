@@ -184,8 +184,8 @@ M.build_ui = function(wgt)
     bStatusBar:rectangle({x=25, y=0,w=70, h=20, color=RED, filled=true, visible=function() return (wgt.values.rqly_min < 80) end })
     bStatusBar:label({x=3  , y=2, text=function() return string.format("elrs RQly-: %s%%", wgt.values.rqly_min) end, font=function() return (wgt.values.rqly_min >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
     bStatusBar:label({x=100, y=2, text=function() return string.format("TPwr+: %smw", getValue("TPWR+")) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=200, y=2, text=function() return string.format("VBec-: %sv", getValue("Vbec-")) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=280, y=0, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
+    bStatusBar:label({x=200, y=2, text=function() return string.format("VBec-: %sv", getValue("Vbec-")) end, visible=function() return getValue("Vbec-") > 0 end, font=FS.FONT_6, color=WHITE})
+    bStatusBar:label({x=280, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
     bStatusBar:label({ x=LCD_W -90, y=2, text=function() return string.format("V: %s", wgt.app_ver) end, font=FS.FONT_6, color=WHITE})
 
     bStatusBar:circle({ x=LCD_W -30, y=10, filled=true, radius=7, color=function() return wgt.is_connected and GREEN or GREY end})
@@ -194,4 +194,3 @@ M.build_ui = function(wgt)
 end
 
 return M
-

@@ -1,6 +1,6 @@
 local app_name = "RF2_widget"
 
-local VERSION = "1.0.0"
+local VERSION = "1.0.1"
 
 local baseDir = "/SCRIPTS/RF2_widget"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
@@ -555,7 +555,6 @@ end
 
 local function background(wgt)
 
-    wgt.is_connected = wgt.is_connected
 
     updateCurr(wgt)
     updateCell(wgt)
@@ -581,8 +580,11 @@ local function background(wgt)
     -- not on air, msp allowed
 
     if getRSSI() > 0 then
+        if not wgt.is_connected then
+            -- This is the first moment we have a connection.
+            wgt.is_connected = true -- Set flag immediately to prevent re-triggering
+        end
         lastTime = clock()
-        wgt.is_connected = true
     elseif getRSSI() == 0 then
         if lastTime and clock() - lastTime < 5 then
             -- Do not re-initialise if the RSSI is 0 for less than 5 seconds.
@@ -590,9 +592,7 @@ local function background(wgt)
             return
         end
         if wgt.is_connected then
-            -- state = STATE.WAIT_FOR_CONNECTION_INIT
             updateOnNoConnection(wgt)
-            -- return
         end
     end
 
