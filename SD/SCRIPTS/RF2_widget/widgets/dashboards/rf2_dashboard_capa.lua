@@ -6,7 +6,7 @@ local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
 
-local lib_blackbox_horz = assert(rf2.loadScript("/widgets/parts/blackbox_horz.lua"))()
+local lib_blackbox_horz = assert(loadScript(baseDir .. "widgets/parts/blackbox_horz.lua"))()
 
 local M = {}
 
@@ -37,4 +37,3 @@ end
 
 
 return M
-

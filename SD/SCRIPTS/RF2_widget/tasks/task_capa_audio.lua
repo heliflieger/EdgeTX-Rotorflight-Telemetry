@@ -37,7 +37,7 @@ M.run = function(wgt)
         last_capa_perc_parted = new_capa_parted
         if is_drop then
             log("audio for capacity - new capacity: %s", new_capa)
-            if new_capa_parted == 50 or new_capa_parted == 30 then
+            if new_capa_parted == 50 or new_capa_parted == 30 or wgt.options.every10percent then
                 playCapacityValue_by_percent(wgt)
                 return 1
             end

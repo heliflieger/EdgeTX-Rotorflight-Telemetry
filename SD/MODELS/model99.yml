@@ -606,14 +606,6 @@ logicalSw:
     andsw: L63
     lsPersist: 0
     lsState: 0
-  1:
-    func: FUNC_VNEG
-    def: tele(18),700
-    delay: 0
-    duration: 0
-    andsw: L64
-    lsPersist: 0
-    lsState: 0
   31:
     func: FUNC_VPOS
     def: SH,0
@@ -687,10 +679,6 @@ customFn:
     swtch: ON
     func: PLAY_SCRIPT
     def: rf2bg,1,On
-  14:
-    swtch: L2
-    func: PLAY_TRACK
-    def: "WBEC\x00\x00\x00\x00,1,2"
   22:
     swtch: FM1
     func: PLAY_TRACK

@@ -204,6 +204,7 @@ Sie können das Aussehen und Verhalten des Widgets direkt im Einstellungsmenü d
 | **Textfarbe** | Passen Sie die primäre Textfarbe des Widgets an. |
 | **Audio-Ansagen aktivieren** | **AN:** Spielt Sprachwarnungen für Scharf/Unscharf und niedrigen Akku ab. |
 | **Haptische Ansagen aktivieren** | **AN:** Lässt den Sender bei Warnungen vor niedrigem Akku vibrieren (auch wenn der Ton aus ist). |
+| **Akku-Ansage alle 10%** | **AN:** Spielt eine Akkuwarnung bei jedem 10%-Schritt des Verbrauchs ab (z.B. 90%, 80%, 70%...). Wenn deaktiviert, erfolgen Warnungen nur bei 50% und 30%. |
 | **Autorotations-Profil** | Wählen Sie das Raten-Profil, das für die Autorotation verwendet wird. Wenn dieses Profil aktiv ist, wird "Autorotation" anstelle der Profilnummer angesagt. |
 
 ---
