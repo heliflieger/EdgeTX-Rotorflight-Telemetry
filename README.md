@@ -199,14 +199,10 @@ You can customize the widget appearance and behavior directly in the EdgeTX widg
 
 | Option | Description |
 | :--- | :--- |
-| **Show Total Voltage** | **OFF:** Shows average cell voltage (e.g., 3.8V). <br> **ON:** Shows total pack voltage (e.g., 22.8V). |
-| **GUI Style** | Choose between different visual styles: <br> **1-Fancy:** Graphical gauges. <br> **2-Modern:** Clean modern design. |
-| **Max Current** | Set the maximum current (Amps) for the graphical bar scaling. |
-| **Max ESC Temp** | Set the maximum ESC temperature (°C) for the graphical bar scaling. |
 | **Text Color** | Customize the primary text color of the widget. |
 | **Enable Audio Announcements** | **ON:** Plays voice alerts for Arm/Disarm and low battery. |
-| **Enable Haptic Announcements** | **ON:** Vibrates the radio on low battery warnings (even if audio is off). |
 | **10% Capacity Announce** | **ON:** Plays a battery warning at every 10% step of consumption (e.g., 90%, 80%, 70%...). If disabled, warnings only occur at 50% and 30%. |
+| **Enable Haptic Announcements** | **ON:** Vibrates the radio on low battery warnings (even if audio is off). |
 | **Autorotation Profile** | Select the Rate Profile used for Autorotation. When this profile is active, "Autorotation" is announced instead of the profile number. |
 
 ---

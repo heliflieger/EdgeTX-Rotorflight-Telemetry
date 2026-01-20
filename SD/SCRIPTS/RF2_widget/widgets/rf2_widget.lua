@@ -8,9 +8,8 @@ local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 local timerNumber = 1
 
 local dashboard_styles = {
-    [1] = "rf2_dashboard_fancy.lua",
-    [2] = "rf2_dashboard_modern.lua",
-    [3] = "rf2_dashboard_capa.lua",
+    [1] = "rf2_dashboard_modern.lua",
+    [2] = "rf2_dashboard_capa.lua",
 }
 
 local lastTime = 0
@@ -21,6 +20,9 @@ local wgt = {
     is_connected = false,
     isInitialized = false,
     task_capa_audio = nil,
+    protocol = "elrs", -- default protocol
+    currTop = 10,
+    tempTop = 10,
     
     values = {
         craft_name = "-------",
@@ -28,8 +30,8 @@ local wgt = {
 
         vbat = -1,
         vcel = -1,
+        cell_count = -1,
         cell_percent = -1,
-        volt = -1,
         curr = 0,
         curr_max = 0,
         curr_str = "0",
@@ -40,6 +42,9 @@ local wgt = {
         capaPercent = -1,
         capaPercent_txt = "---",
 
+        vbec = 0,
+        vbec_min = 0,
+
         EscT = 0,
         EscT_max = 0,
         EscT_str = "0",
@@ -48,9 +53,7 @@ local wgt = {
         EscT_max_percent = 0,
 
         rqly = 0,
-        rqly_min = 0,
-        rqly_str = 0,
-        rqly_min_str = 0,
+        rqly_min = -1,
 
         -- governor_str = "-------",
         bb_enabled = true,
@@ -84,27 +87,14 @@ local wgt = {
         model_total_flights = nil,
         model_total_time = nil,
         model_total_time_str = "--:--",
+
+        link_tx_power_max = -1,
     },
 
 }
 
 local interval_read_live_info_arm = 5
 local interval_read_live_info_disarm = 1
-
--- Data gathered from commercial lipo sensors
-local percent_list_lipo = {
-    {3.000,  0},
-    {3.093,  1}, {3.196,  2}, {3.301,  3}, {3.401,  4}, {3.477,  5}, {3.544,  6}, {3.601,  7}, {3.637,  8}, {3.664,  9}, {3.679, 10},
-    {3.683, 11}, {3.689, 12}, {3.692, 13}, {3.705, 14}, {3.710, 15}, {3.713, 16}, {3.715, 17}, {3.720, 18}, {3.731, 19}, {3.735, 20},
-    {3.744, 21}, {3.753, 22}, {3.756, 23}, {3.758, 24}, {3.762, 25}, {3.767, 26}, {3.774, 27}, {3.780, 28}, {3.783, 29}, {3.786, 30},
-    {3.789, 31}, {3.794, 32}, {3.797, 33}, {3.800, 34}, {3.802, 35}, {3.805, 36}, {3.808, 37}, {3.811, 38}, {3.815, 39}, {3.818, 40},
-    {3.822, 41}, {3.825, 42}, {3.829, 43}, {3.833, 44}, {3.836, 45}, {3.840, 46}, {3.843, 47}, {3.847, 48}, {3.850, 49}, {3.854, 50},
-    {3.857, 51}, {3.860, 52}, {3.863, 53}, {3.866, 54}, {3.870, 55}, {3.874, 56}, {3.879, 57}, {3.888, 58}, {3.893, 59}, {3.897, 60},
-    {3.902, 61}, {3.906, 62}, {3.911, 63}, {3.918, 64}, {3.923, 65}, {3.928, 66}, {3.939, 67}, {3.943, 68}, {3.949, 69}, {3.955, 70},
-    {3.961, 71}, {3.968, 72}, {3.974, 73}, {3.981, 74}, {3.987, 75}, {3.994, 76}, {4.001, 77}, {4.007, 78}, {4.014, 79}, {4.021, 80},
-    {4.029, 81}, {4.036, 82}, {4.044, 83}, {4.052, 84}, {4.062, 85}, {4.074, 86}, {4.085, 87}, {4.095, 88}, {4.105, 89}, {4.111, 90},
-    {4.116, 91}, {4.120, 92}, {4.125, 93}, {4.129, 94}, {4.135, 95}, {4.145, 96}, {4.176, 97}, {4.179, 98}, {4.193, 99}, {4.200,100},
-}
 
 --------------------------------------------------------------
 local function log(fmt, ...)
@@ -119,27 +109,6 @@ end
 
 -- better font size names
 local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
-
-
--- local function tableToString(tbl)
---    if (tbl == nil) then return "---" end
---    local result = {}
---    for key, value in pairs(tbl) do
---        table.insert(result, string.format("%s: %s", tostring(key), tostring(value)))
---    end
---    return table.concat(result, ", ")
--- end
-
-local function isFileExist(file_name)
-    log("is_file_exist() file_name: %s", file_name)
-    local hFile = fstat(file_name)
-    if hFile == nil then
-        log("file not exist - %s", file_name)
-        return false
-    end
-    log("file exist - %s", file_name)
-    return true
-end
 
 -----------------------------------------------------------------------------------------------------------------
 
@@ -212,7 +181,7 @@ local function formatTime(wgt, t1)
 end
 
 local build_ui = function(wgt, file_name)
-    local ui_lib = assert(loadScript(baseDir .. "/widgets/dashboards/" ..file_name))()
+    local ui_lib = assert(loadScript(baseDir .. "/widgets/dashboards/" ..file_name))(app_name, baseDir, wgt.statusbar)
     ui_lib.build_ui(wgt)
 end
 
@@ -240,29 +209,33 @@ end
 
 local function updateCell(wgt)
     -- local batPercent = getValue("Bat%")
-    local vbat     = getValue("Vbat")
-    local vbat_min = getValue("Vbat-")
+    local vbat     = getValue("Vbat") or 0
+    local vbat_min = getValue("Vbat-") or 0
 
-    local cell_count = getValue("Cel#")
+    local cell_count = getValue("Cel#") or 0
+    wgt.values.cell_count = cell_count
 
     local vcel = cell_count > 0 and (vbat / cell_count) or 0
     local vcel_min = cell_count > 0 and (vbat_min / cell_count) or 0
 
-    local batPercent = getValue("Bat%")
+    local batPercent = getValue("Bat%") or 0
     -- log("vbat: %s, vcel: %s, BatPercent: %s", vbat, vcel, batPercent)
 
     wgt.values.vbat = vbat
+
     wgt.values.vcel = vcel
     wgt.values.cell_percent = batPercent
-    wgt.values.volt = (wgt.options.showTotalVoltage==1) and vbat or vcel
     wgt.values.cellColor = (vcel < 3.7) and RED or lcd.RGB(0x00963A) --GREEN
 end
 
 local function updateCurr(wgt)
-    local curr_top = wgt.options.currTop
-    local val     = getValue("Curr")
-    local val_max = getValue("Curr+")
+    local curr_top = wgt.currTop
+    local val     = getValue("Curr") or 0
+    local val_max = getValue("Curr+") or 0
     -- log("telemetery8: updateCurr:  curr: %s, curr_max: %s", curr, curr_max)
+    if curr_top <= val_max then
+        wgt.currTop = (math.floor(val_max / 10) + 1) * 10
+    end
 
     wgt.values.curr = val
     wgt.values.curr_max = val_max
@@ -397,9 +370,12 @@ local function updateThr(wgt)
 end
 
 local function updateTemperature(wgt)
-    local tempTop = wgt.options.tempTop
+    local tempTop = wgt.tempTop
     local val = getValue("Tesc")
     local val_max = getValue("Tesc+")
+    if tempTop <= val_max then
+        wgt.tempTop = (math.floor(val_max / 10) + 1) * 10
+    end
     wgt.values.EscT = val
     wgt.values.EscT_max = val_max
 
@@ -410,21 +386,20 @@ local function updateTemperature(wgt)
     wgt.values.EscT_max_percent = math.min(100, math.floor(100 * (wgt.values.EscT_max / tempTop)))
 end
 
+
+
 local function updateELRS(wgt)
+    if (getValue("RQly") == nil) then
+        return
+    end
     wgt.values.rqly = getValue("RQly")
     if (wgt.values.rqly <= 0) then
         wgt.values.rqly = getValue("VFR")
     end
-    local rqly_min = getValue("RQly-")
-    if (rqly_min <= 0) then
-        rqly_min = getValue("VFR-")
+    if (wgt.values.rqly_min > wgt.values.rqly or wgt.values.rqly_min == -1) then
+        wgt.values.rqly_min = wgt.values.rqly
     end
-
-    if rqly_min > 0 then
-        wgt.values.rqly_min = rqly_min
-    end
-    wgt.values.rqly_str = string.format("%d%%", wgt.values.rqly)
-    wgt.values.rqly_min_str = string.format("%d%%", wgt.values.rqly_min)
+    
 end
 
 local function playSoundFile(soundFile)
@@ -495,9 +470,9 @@ local function updateImage(wgt)
         return
     end
     local filename = "/IMAGES/"..newCraftName..".png"
-    if isFileExist(filename) == false then
+    if wgt.tools.isFileExist(filename) == false then
         filename = "/IMAGES/".. model.getInfo().bitmap
-        if model.getInfo().bitmap == "" or isFileExist(filename) == false then
+        if model.getInfo().bitmap == "" or wgt.tools.isFileExist(filename) == false then
             filename = baseDir.."/widgets/img/rf2_logo.png"
         end
     end
@@ -512,11 +487,16 @@ local function updateOnNoConnection(wgt)
     wgt.values.arm_disable_flags_txt = ""
     wgt.values.arm_fail = false
     wgt.values.craft_name = "-------"
+    wgt.values.link_tx_power_max = 0
+    
     wgt.not_connected_error = "Not connected"
     wgt.isInitialized = false
     wgt.is_arm = false
     wgt.is_telem = false
     wgt.is_connected = false
+    wgt.currTop = 10
+    wgt.tempTop = 10
+
     collectgarbage()
 end
 
@@ -530,6 +510,9 @@ local function update(wgt, options)
     wgt.options = options
     wgt.not_connected_error = "Not connected"
 
+    wgt.tools     = assert(loadScript(baseDir .. "/widgets/lib_widget_tools.lua", "btd"))(log, app_name)
+    wgt.statusbar = assert(loadScript(baseDir .. "/widgets/parts/statusbar.lua",  "btd"))(log, app_name, wgt.tools)
+
     if (wgt.options.enableAudio == 1 or wgt.options.enableHaptic == 1) and wgt.task_capa_audio == nil then
         wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(log, app_name)
         wgt.task_capa_audio.init()
@@ -538,7 +521,7 @@ local function update(wgt, options)
     log("isFullscreen: %s", lvgl.isFullScreen())
     log("isAppMode: %s", lvgl.isAppMode())
 
-    local dashboard_file_name = dashboard_styles[wgt.options.guiStyle] or dashboard_styles[1]
+    local dashboard_file_name = dashboard_styles[1]
     if lvgl.isFullScreen() then
         dashboard_file_name = "rf2_dashboard_app_mode.lua"
     end
@@ -553,9 +536,35 @@ local function create(zone, options)
     return update(wgt, options)
 end
 
+
+
+local function readBec(wgt)
+   if (getValue("Vbec") == nil) then
+        return
+    end
+    wgt.values.vbec = getValue("Vbec")
+    if (wgt.values.vbec_min > wgt.values.vbec or wgt.values.vbec_min == 0) then
+        wgt.values.vbec_min = wgt.values.vbec
+    end
+end
+
+local function readTXPower(wgt)
+    if (getValue("TPWR") == nil) then
+        return
+    end
+    local value = getValue("TPWR")
+    if (wgt.values.link_tx_power_max < value) then
+        wgt.values.link_tx_power_max = value
+    end
+end
+
 local function background(wgt)
 
+    if wgt.task_capa_audio then
+        wgt.task_capa_audio.run(wgt)
+    end
 
+    -- not on air
     updateCurr(wgt)
     updateCell(wgt)
     updateTimeCount(wgt)
@@ -565,24 +574,22 @@ local function background(wgt)
     updateTemperature(wgt)
     updateImage(wgt)
     playCraftName(wgt)
-    updateELRS(wgt)
     updateRateProfile(wgt)
     updateRescue(wgt)
     updateARM(wgt)
     updateARMD(wgt)
     updateFlyStat(wgt)
 
-    if wgt.task_capa_audio then
-        wgt.task_capa_audio.run(wgt)
-    end
-    
-
-    -- not on air, msp allowed
-
     if getRSSI() > 0 then
+        readTXPower(wgt)
+        readBec(wgt)
+        updateELRS(wgt)
+
         if not wgt.is_connected then
             -- This is the first moment we have a connection.
             wgt.is_connected = true -- Set flag immediately to prevent re-triggering
+            wgt.values.rqly_min = -1
+            wgt.values.vbec_min = 0
         end
         lastTime = clock()
     elseif getRSSI() == 0 then
