@@ -197,14 +197,10 @@ Sie können das Aussehen und Verhalten des Widgets direkt im Einstellungsmenü d
 
 | Option | Beschreibung |
 | :--- | :--- |
-| **Gesamtspannung anzeigen** | **AUS:** Zeigt die durchschnittliche Zellenspannung (z.B. 3,8V). <br> **AN:** Zeigt die Gesamtspannung des Akkus (z.B. 22,8V). |
-| **GUI-Stil** | Wählen Sie zwischen verschiedenen visuellen Stilen: <br> **1-Fancy:** Grafische Anzeigen. <br> **2-Modern:** Sauberes, modernes Design. |
-| **Max. Strom** | Stellen Sie den maximalen Strom (Ampere) für die Skalierung der grafischen Leiste ein. |
-| **Max. ESC-Temp** | Stellen Sie die maximale ESC-Temperatur (°C) für die Skalierung der grafischen Leiste ein. |
 | **Textfarbe** | Passen Sie die primäre Textfarbe des Widgets an. |
 | **Audio-Ansagen aktivieren** | **AN:** Spielt Sprachwarnungen für Scharf/Unscharf und niedrigen Akku ab. |
-| **Haptische Ansagen aktivieren** | **AN:** Lässt den Sender bei Warnungen vor niedrigem Akku vibrieren (auch wenn der Ton aus ist). |
 | **Akku-Ansage alle 10%** | **AN:** Spielt eine Akkuwarnung bei jedem 10%-Schritt des Verbrauchs ab (z.B. 90%, 80%, 70%...). Wenn deaktiviert, erfolgen Warnungen nur bei 50% und 30%. |
+| **Haptische Ansagen aktivieren** | **AN:** Lässt den Sender bei Warnungen vor niedrigem Akku vibrieren (auch wenn der Ton aus ist). |
 | **Autorotations-Profil** | Wählen Sie das Raten-Profil, das für die Autorotation verwendet wird. Wenn dieses Profil aktiv ist, wird "Autorotation" anstelle der Profilnummer angesagt. |
 
 ---
