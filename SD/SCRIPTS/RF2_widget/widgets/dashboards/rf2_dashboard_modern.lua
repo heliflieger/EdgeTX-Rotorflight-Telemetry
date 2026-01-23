@@ -30,7 +30,7 @@ M.build_ui = function(wgt)
     pMain:build({{type="box", x=30+280, y=150,
         children={
             {type="label", text="Profile", x=0, y=40, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", text=function() return getValue("PID#") end , x=6, y=0, font=FS.FONT_16 ,color=txtColor},
+            {type="label", text=function() return wgt.values.pid_profile end , x=6, y=0, font=FS.FONT_16 ,color=txtColor},
         }
     }})
 
@@ -62,7 +62,7 @@ M.build_ui = function(wgt)
     pMain:build({{type="box", x=145, y=0,
         children={
             {type="label", text="Head Speed",  x=0, y=0, font=FS.FONT_6, color=titleGreyColor},
-            {type="label", text=function() return getValue("Hspd") end, x=0, y=15, font=FS.FONT_16 ,color=txtColor},
+            {type="label", text=function() return wgt.values.hspd end, x=0, y=15, font=FS.FONT_16 ,color=txtColor},
         }
     }})
 

@@ -3,6 +3,7 @@ local app_name = "RF2_widget"
 local VERSION = "1.0.0"
 
 local baseDir = "/SCRIPTS/RF2_widget"
+local SETTINGS_FILENAME = baseDir .. "/settings.dat"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 
 local timerNumber = 1
@@ -19,6 +20,8 @@ local lastTime = 0
 local wgt = {
     app_ver = VERSION,
     is_connected = false,
+    isDirty = false, -- Flag to mark unsaved changes
+    lastSaveTime = 0, -- Timestamp of the last save
     isInitialized = false,
     task_capa_audio = nil,
     
@@ -47,22 +50,21 @@ local wgt = {
         EscT_percent = 0,
         EscT_max_percent = 0,
 
+        hspd = 0,
+
         rqly = 0,
         rqly_min = 0,
         rqly_str = 0,
         rqly_min_str = 0,
 
         -- governor_str = "-------",
-        bb_enabled = true,
-        bb_percent = 0,
         rate_profile = -1,
         rate_profile_pending = -1,
         rate_profile_announced = -1,
         rate_profile_switch_time = 0,
-        bb_size = 0,
-        bb_txt = "Blackbox: --% 0MB",
+        pid_profile = -1,
+
         rescue_on = false,
-        rescue_txt = "--",
         is_arm = false,
         arm_fail = false,
         arm_disable_flags_list = nil,
@@ -73,10 +75,6 @@ local wgt = {
 
         img_last_name = "---",
         img_craft_name_for_image = "---",
-        img_box_1 = nil,
-        img_replacment_area1 = nil,
-        img_box_2 = nil,
-        img_replacment_area2 = nil,
 
         thr = 0,
         thr_max = 0,
@@ -88,8 +86,6 @@ local wgt = {
 
 }
 
-local interval_read_live_info_arm = 5
-local interval_read_live_info_disarm = 1
 
 -- Data gathered from commercial lipo sensors
 local percent_list_lipo = {
@@ -107,11 +103,9 @@ local percent_list_lipo = {
 }
 
 --------------------------------------------------------------
-local function log(fmt, ...)
-    print(string.format("[%s] "..fmt, app_name, ...))
-    return
-end
-
+local logLib = assert(loadScript(baseDir .. "/lib/log.lua"))()
+logLib.init(app_name)
+local log = logLib.log
 local function clock()
     return getTime() / 100
 end
@@ -225,10 +219,7 @@ end
 
 -------------------------------------------------------------------
 
-local replImg = 0
-local imgTp = 0
 local function updateCraftName(wgt)
-    -- log("updateCraftName() called %s", model.getInfo().name)
     wgt.values.craft_name = model.getInfo().name
 end
 
@@ -322,8 +313,6 @@ local function armingDisableFlagsList()
         return nil
     end
 
-    -- flags = 0x31090186
-    -- rf2.log("disableFlags: flags:%s", flags)
 
     local result = {}
 
@@ -462,6 +451,10 @@ local function updateRateProfile(wgt)
     end
 end
 
+local function updatPidProfile(wgt)
+    wgt.values.pid_profile = getValue("PID#")
+end
+
 local function updateRescue(wgt)
     local val = getValue("Resc")
     local is_rescue = (val > 0)
@@ -530,6 +523,27 @@ local function update(wgt, options)
     wgt.options = options
     wgt.not_connected_error = "Not connected"
 
+<<<<<<< Updated upstream
+=======
+    -- Load custom settings from file and merge with defaults
+    local settingsLib = assert(loadScript(baseDir .. "/lib/settings.lua"))()
+    local savedSettings = settingsLib.load(SETTINGS_FILENAME)
+    if savedSettings then
+        log("Custom settings loaded from %s", SETTINGS_FILENAME)
+        for key, value in pairs(savedSettings) do
+            wgt.options[key] = value
+        end
+    else
+        log("No custom settings file found. Using defaults.")
+        -- Optionally, save the defaults immediately to create the file
+        settingsLib.save(SETTINGS_FILENAME, wgt.options)
+    end
+
+
+    wgt.tools     = assert(loadScript(baseDir .. "/widgets/lib_widget_tools.lua", "btd"))(log, app_name)
+    wgt.statusbar = assert(loadScript(baseDir .. "/widgets/parts/statusbar.lua",  "btd"))(log, app_name, wgt.tools)
+
+>>>>>>> Stashed changes
     if (wgt.options.enableAudio == 1 or wgt.options.enableHaptic == 1) and wgt.task_capa_audio == nil then
         wgt.task_capa_audio = loadScript(baseDir .. "/tasks/task_capa_audio.lua", "btd")(log, app_name)
         wgt.task_capa_audio.init()
@@ -553,6 +567,34 @@ local function create(zone, options)
     return update(wgt, options)
 end
 
+<<<<<<< Updated upstream
+=======
+local function updateHspd(wgt)
+    wgt.values.hspd = getValue("Hspd")
+end
+
+
+local function readBec(wgt)
+   if (getValue("Vbec") == nil) then
+        return
+    end
+    wgt.values.vbec = getValue("Vbec")
+    if (wgt.values.vbec_min > wgt.values.vbec or wgt.values.vbec_min == 0) then
+        wgt.values.vbec_min = wgt.values.vbec
+    end
+end
+
+local function readTXPower(wgt)
+    if (getValue("TPWR") == nil) then
+        return
+    end
+    local value = getValue("TPWR")
+    if (wgt.values.link_tx_power_max < value) then
+        wgt.values.link_tx_power_max = value
+    end
+end
+
+>>>>>>> Stashed changes
 local function background(wgt)
 
     wgt.is_connected = wgt.is_connected
@@ -568,15 +610,24 @@ local function background(wgt)
     playCraftName(wgt)
     updateELRS(wgt)
     updateRateProfile(wgt)
+    updatPidProfile(wgt)
     updateRescue(wgt)
     updateARM(wgt)
     updateARMD(wgt)
     updateFlyStat(wgt)
 
+<<<<<<< Updated upstream
     if wgt.task_capa_audio then
         wgt.task_capa_audio.run(wgt)
     end
     
+=======
+    if getRSSI() > 0 then
+        readTXPower(wgt)
+        readBec(wgt)
+        updateELRS(wgt)
+        updateHspd(wgt)
+>>>>>>> Stashed changes
 
     -- not on air, msp allowed
 
@@ -596,6 +647,19 @@ local function background(wgt)
         end
     end
 
+    -- Save settings if they are marked as dirty and enough time has passed
+    local now = clock()
+    if wgt.isDirty and (now - wgt.lastSaveTime > 5) then -- Save every 5 seconds if dirty
+        local settingsLib = assert(loadScript(baseDir .. "/lib/settings.lua"))()
+        local success = settingsLib.save(SETTINGS_FILENAME, wgt.options)
+        if success then
+            log("Settings saved automatically.")
+            wgt.isDirty = false
+            wgt.lastSaveTime = now
+        else
+            log("Error: Failed to save settings.")
+        end
+    end
 end
 
 local function refresh(wgt, event, touchState)

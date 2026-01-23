@@ -1,3 +1,9 @@
+<<<<<<< Updated upstream
+=======
+local langLib = assert(loadScript("/SCRIPTS/RF2_widget/lib/language.lua"))()
+local translations = langLib.getTranslations()
+
+>>>>>>> Stashed changes
 local M = {
 
     options = {
@@ -12,6 +18,7 @@ local M = {
     },
 
     translate = function(name)
+<<<<<<< Updated upstream
         local translations = {
             showTotalVoltage="Show Total Voltage",
             guiStyle="GUI Style",
@@ -23,6 +30,10 @@ local M = {
             auroprofile="Select the rate profile for autorotation",
         }
         return translations[name]
+=======
+        -- This function is called by the system to get the display name for an option.
+        return translations[name] or name
+>>>>>>> Stashed changes
     end
 
 }

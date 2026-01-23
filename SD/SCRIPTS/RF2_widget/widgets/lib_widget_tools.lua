@@ -5,12 +5,68 @@ M.app_name = app_name
 
 local lcd = lcd
 
+<<<<<<< Updated upstream
 -- better font names
 local FONT_38 = XXLSIZE -- 38px
 local FONT_16 = DBLSIZE -- 16px
 local FONT_12 = MIDSIZE -- 12px
 local FONT_8 = 0 -- Default 8px
 local FONT_6 = SMLSIZE -- 6px
+=======
+-- better font size names
+local FS={FONT_38=XXLSIZE,FONT_16=DBLSIZE,FONT_12=MIDSIZE,FONT_8=0,FONT_6=SMLSIZE}
+M.FS = FS
+M.FONT_LIST = {FS.FONT_6, FS.FONT_8, FS.FONT_12, FS.FONT_16, FS.FONT_38}
+
+
+---------------------------------------------------------------------------------------------------
+
+function M.periodicInit()
+    local t = {
+        startTime = -1,
+        durationMili = -1
+    }
+    return t
+end
+
+function M.periodicStart(t, durationMili)
+    t.startTime = getTime();
+    t.durationMili = durationMili;
+end
+
+function M.periodicHasPassed(t, show_log)
+    -- not started yet
+    if (t.durationMili <= 0) then
+        return false;
+    end
+
+    local elapsed = getTime() - t.startTime;
+    --log('elapsed: %d (t.durationMili: %d)', elapsed, t.durationMili)
+    if show_log == true then
+        log('elapsed: %0.1f/%0.1f sec', elapsed/100, t.durationMili/1000)
+    end
+    local elapsedMili = elapsed * 10;
+    if (elapsedMili < t.durationMili) then
+        return false;
+    end
+    return true;
+end
+
+function M.periodicGetElapsedTime(t, show_log)
+    local elapsed = getTime() - t.startTime;
+    local elapsedMili = elapsed * 10;
+    if show_log == true then
+        log('elapsed: %0.1f/%0.1f sec', elapsed/100, t.durationMili/1000)
+    end
+    return elapsedMili;
+end
+
+function M.periodicReset(t)
+    t.startTime = getTime();
+    --log("periodicReset()");
+    M.periodicGetElapsedTime(t)
+end
+>>>>>>> Stashed changes
 
 local FONT_LIST = {FONT_6, FONT_8, FONT_12, FONT_16, FONT_38}
 
