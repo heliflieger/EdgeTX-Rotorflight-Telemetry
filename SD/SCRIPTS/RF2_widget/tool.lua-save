@@ -1,0 +1,185 @@
+chdir("/SCRIPTS/RF2_widget")
+
+
+-- Use a global table to allow sharing state across different scripts loaded within the same context.
+_G.rfsuite = _G.rfsuite or {session = {}}
+local rfsuite = _G.rfsuite
+
+local run = nil
+local scriptsCompiled = loadScript("COMPILE/scripts_compiled.lua")
+local useLvgl = false
+local logLib = assert(loadScript("lib/log.lua"))()
+local app_name = "RF2_tool"
+logLib.init(app_name)
+rfsuite.log = logLib.log
+
+-- LuaFormatter off
+local config = {
+    toolName = "Rotorflight",
+    --icon = lcd.loadMask("app/gfx/icon.png"),
+    --icon_logtool = lcd.loadMask("app/gfx/icon_logtool.png"),
+    --icon_unsupported = lcd.loadMask("app/gfx/unsupported.png"),
+    version = {major = 2, minor = 3, revision = 0, suffix = "20251111"}, -- Keep your version
+    edgeTXVersion = {2, 11, 4}, -- Corrected to match your EdgeTX version
+    supportedMspApiVersion = {"12.07", "12.08", "12.09"},
+    baseDir = "/SCRIPTS/RF2_widget/",
+    preferences = "RF2_widget.user.ini",
+    defaultRateProfile = 6,   -- default, may be overridden in onconnect/tasks/rateprofile.lua
+    watchdogParam = 10,
+    --msp = {
+    --    probeProtocol = 1,
+    --    maxProtocol = 2,
+    --    allowAutoUpgrade = true,
+    --    v2MinApiVersion = "12.09",
+    --},
+    --mspProtocolVersion = 1,
+}
+-- LuaFormatter on
+
+config.edgeTXVersionString = string.format("EdgeTX < V%d.%d.%d", table.unpack(config.edgeTXVersion))
+
+rfsuite.config = config
+
+rfsuite.ini = assert(loadScript("lib/ini.lua"))(config)
+
+local userpref_defaults = {
+    general = {
+        enableAudio = false,
+        enableHaptic = false,
+        every10percent = false,
+        auroprofile = 8,  -- Disabled
+    }
+    -- general = {
+    --     iconsize = 2,
+    --     syncname = false,
+    --     gimbalsupression = 0.85,
+    --     txbatt_type = 0,
+    --     hs_loader = 0
+    -- },
+    -- localizations = {
+    --     temperature_unit = 0,
+    --     altitude_unit = 0
+    -- },
+    -- dashboard = {
+    --     theme_loader = 1,
+    --     theme_preflight = "system/default",
+    --     theme_inflight = "system/default",
+    --     theme_postflight = "system/default"
+    -- },
+    -- events = {
+    --     armflags = true,
+    --     voltage = true,
+    --     governor = true,
+    --     pid_profile = true,
+    --     rate_profile = true,
+    --     esc_temp = false,
+    --     escalertvalue = 90,
+    --     smartfuel = true,
+    --     smartfuelcallout = 0,
+    --     smartfuelrepeats = 1,
+    --     smartfuelhaptic = false,
+    --     adj_v = false,
+    --     adj_f = false
+    -- },
+    -- switches = {},
+    -- developer = {
+    --     compile = true,
+    --     devtools = false,
+    --     loglevel = "off",
+    --     logmsp = false,
+    --     logobjprof = false,
+    --     logmspQueue = false,
+    --     memstats = false,
+    --     taskprofiler = false,
+    --     mspexpbytes = 8,
+    --     apiversion = 2,
+    --     overlaystats = false,
+    --     overlaygrid = false,
+    --     overlaystatsadmin = false
+    -- },
+    -- timer = {
+    --     timeraudioenable = false,
+    --     elapsedalertmode = 0,
+    --     prealerton = false,
+    --     postalerton = false,
+    --     prealertinterval = 10,
+    --     prealertperiod = 30,
+    --     postalertinterval = 10,
+    --     postalertperiod = 30
+    -- },
+    -- menulastselected = {}
+}
+
+local userpref_file = "/SCRIPTS/" .. rfsuite.config.preferences
+rfsuite.log("Preferences file: %s", userpref_file)
+
+local master_ini = rfsuite.ini.load_ini_file(userpref_file) or {}
+local updated_ini = rfsuite.ini.merge_ini_tables(master_ini, userpref_defaults)
+rfsuite.preferences = updated_ini
+
+if not rfsuite.ini.ini_tables_equal(master_ini, updated_ini) then rfsuite.ini.save_ini_file(userpref_file, updated_ini) end
+
+-- log(rfsuite.preferences) -- This causes a crash: "attempt to concatenate a table value"
+
+rfsuite.config.bgTaskName = rfsuite.config.toolName .. " [Background]"
+rfsuite.config.bgTaskKey = "rf2bg"
+
+rfsuite.utils = assert(loadScript("lib/utils.lua"))(rfsuite.config)
+
+-- rfsuite.tasks = assert(loadfile("tasks/tasks.lua"))(rfsuite.config)
+
+function rfsuite.version()
+    local v = rfsuite.config.version
+    return {version = string.format("%d.%d.%d-%s", v.major, v.minor, v.revision, v.suffix), major = v.major, minor = v.minor, revision = v.revision, suffix = v.suffix}
+end
+
+local function unsupported_tool()
+    return {
+        name = rfsuite.config.toolName,
+        icon = rfsuite.config.icon_unsupported,
+        create = function() end,
+        wakeup = function() lcd.invalidate() end,
+        paint = function()
+            local w, h = lcd.getWindowSize()
+            lcd.color(lcd.RGB(255, 255, 255, 1))
+            lcd.font(FONT_STD)
+            local msg = rfsuite.config.ethosVersionString
+            local tw, th = lcd.getTextSize(msg)
+            lcd.drawText((w - tw) / 2, (h - th) / 2, msg)
+        end,
+        close = function() end
+    }
+end
+
+if scriptsCompiled then
+    rfsuite.log("Starting RF2_tool")
+    local canUseLvgl = assert(loadScript("lib/canUseLvgl.lua"))()
+    if canUseLvgl then
+        useLvgl = true
+    end
+    local langLib = assert(loadScript("lib/language.lua"))()
+    -- Store translations in the global rfsuite table. This is a more robust way
+    -- to share state between scripts than passing parameters, which can be
+    -- unreliable in some EdgeTX environments.
+    rfsuite.i18n = langLib.getTranslations()
+    
+    local versionOk = rfsuite.utils.edgeTXVersionAtLeast(config.edgeTXVersion)
+
+    if useLvgl and versionOk then
+        -- Laden der Haupt-Dashboard-UI
+        rfsuite.log("Loading LVGL Dashboard UI.")
+        run = assert(loadScript("tool/ui_dashboard.lua"))()
+    else
+        rfsuite.log("i18n test: radioNotSupported = %s", tostring(rfsuite.i18n and rfsuite.i18n["radioNotSupported"]))
+        rfsuite.log("Loading 'not supported' UI (LVGL available: %s, Version OK: %s)", tostring(useLvgl), tostring(versionOk))
+        run = assert(loadScript("tool/ui_notSupported.lua"))()
+    end
+else
+    rfsuite.log("Loading compile script.")
+    run = assert(loadScript("COMPILE/compile.lua"))()
+    collectgarbage()
+end
+
+-- The init function is called by EdgeTX after the script body runs.
+-- Since our initialization happens in the main body, an empty init is sufficient.
+return { run = run, init = function() end, useLvgl = useLvgl }

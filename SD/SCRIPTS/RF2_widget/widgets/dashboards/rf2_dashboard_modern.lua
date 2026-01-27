@@ -1,6 +1,8 @@
-local app_name = "RF2_widget"
+local arg = {...}
+local app_name = arg[1]
+local baseDir = arg[2]
+local statusbar = arg[3]
 
-local baseDir = "/SCRIPTS/RF2_widget/"
 local inSimu = string.sub(select(2,getVersion()), -4) == "simu"
 
 -- better font size names
@@ -74,8 +76,9 @@ M.build_ui = function(wgt)
         function(wgt) return wgt.values.capaColor end
     )
     bCapa:label({x=25,  y=16, font=FS.FONT_16 ,color=WHITE, text=function() return wgt.values.capaPercent_txt end})
-    bCapa:label({x=110, y=22, font=FS.FONT_12 ,color=WHITE, text=function() return string.format("(%.02fv)", wgt.values.volt) end})
-    bCapa:label({text=function() return string.format("used:\n%dmah", wgt.values.capaUsed or 0) end, x=220, y=20, font=FS.FONT_6 ,color=WHITE})
+    bCapa:label({x=150, y=22, font=FS.FONT_6 ,color=WHITE, text=function() return string.format("%.01fV / %.02fV (%dS) ", wgt.values.vbat, wgt.values.vcel, wgt.values.cell_count) end})
+    bCapa:label({x=150, y=35, font=FS.FONT_6 ,color=WHITE, text=function() return string.format("%dmAh ", wgt.values.capaUsed or 0) end})
+
 
 
     -- current
@@ -164,20 +167,19 @@ M.build_ui = function(wgt)
     local bNoConn = lvgl.box({x=330, y=10, visible=function() return wgt.is_connected==false end})
     bNoConn:rectangle({x=5, y=10, w=isizew-10, h=isizeh-10, rounded=15, filled=true, color=BLACK, opacity=250})
     bNoConn:label({x=10, y=80, text=function() return wgt.not_connected_error end , font=FS.FONT_8, color=WHITE})
-    bNoConn:image({x=30, y=0, w=90, h=90, file=baseDir.."widgets/img/no_connection_wr.png"})
+    bNoConn:image({x=30, y=0, w=90, h=90, file=baseDir.."/widgets/img/no_connection_wr.png"})
 
     -- status bar
-    local bStatusBar = pMain:box({x=0, y=wgt.zone.h-20})
-    local statusBarColor = lcd.RGB(0x0078D4)
-    bStatusBar:rectangle({x=0, y=0,w=wgt.zone.w, h=20, color=statusBarColor, filled=true})
-    -- bStatusBar:label({x=3  , y=2, text=function() return string.format("RQLY: %s%%   RQLY-: %s", wgt.values.rqly, wgt.values.rqly_min)) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:rectangle({x=25, y=0,w=70, h=20, color=RED, filled=true, visible=function() return (wgt.values.rqly_min < 80) end })
-    bStatusBar:label({x=3  , y=2, text=function() return string.format("elrs RQly-: %s%%", wgt.values.rqly_min) end, font=function() return (wgt.values.rqly_min >= 80) and FS.FONT_6 or FS.FONT_6  end, color=WHITE})
-    bStatusBar:label({x=100, y=2, text=function() return string.format("TPwr+: %smw", getValue("TPWR+")) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=200, y=2, text=function() return string.format("VBec-: %sv", getValue("Vbec-")) end, font=FS.FONT_6, color=WHITE})
-    bStatusBar:label({x=280, y=0, y=2, text=function() return string.format("Thr+: %s%%", wgt.values.thr_max) end, font=FS.FONT_6, color=WHITE})
+    wgt.statusbar.init("", {
+        
+        {name="VBec-:", ftxt=function() return string.format("VBec: %0.1f/%0.1fV    ",  wgt.values.vbec,        wgt.values.vbec_min     ) end, color=WHITE },
+       -- {name="Curr+:", ftxt=function() return string.format("A: %d/%dA",           wgt.values.curr,        wgt.values.curr_max     ) end},
+        {name="TPwr+:", ftxt=function() return string.format("TPwr+: %smW     ",         wgt.values.link_tx_power_max                    ) end},
+        {name="LQ-:",   ftxt=function() return string.format("LQ: %s/%s%%     ",         wgt.values.rqly,   wgt.values.rqly_min) end, color=GREEN, error_color=RED, error_cond=function() return (wgt.values.rqly < 80) end },
+        --{name="Thr+:",  ftxt=function() return string.format("Thr+: %s%%",          wgt.values.thr_max                              ) end},
+    })
+    local bStatusBar = wgt.statusbar.build_ui(pMain, wgt)
     bStatusBar:label({ x=LCD_W -90, y=2, text=function() return string.format("V: %s", wgt.app_ver) end, font=FS.FONT_6, color=WHITE})
-
     bStatusBar:circle({ x=LCD_W -30, y=10, filled=true, radius=7, color=function() return wgt.is_connected and GREEN or GREY end})
     bStatusBar:circle({ x=LCD_W -12, y=10, filled=true, radius=7, color=function() return wgt.values.is_arm and RED or GREY end })
 
